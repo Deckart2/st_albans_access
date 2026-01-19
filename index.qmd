@@ -1,6 +1,6 @@
 ---
 title: "Measuring Spatial Access to Resources at Scale"
-subtitle: "St. Albans MLK Day of Reflection<br>January 20, 2025"
+subtitle: "St. Albans MLK Day of Reflection<br>January 20, 2026"
 author:
   - name: "Gabe Morrison"
     affiliation: "Senior Data Scientist<br>The Urban Institute"
@@ -60,7 +60,7 @@ options(tigris_use_cache = TRUE)
 - Used to represent a **single location**
 - Examples:
   - Location of post offices
-  - Metro stations
+  - Bus stops
   - Libraries
 :::
 
@@ -77,117 +77,15 @@ tmap_mode("plot")
 # Get DC boundary for context
 dc_boundary <- counties(state = "DC", year = 2022)
 
-# All DC Metro stations (DC, VA, and MD)
-metro_stations <- tribble(
-  ~name, ~lon, ~lat,
-  # Red Line
-  "Metro Center", -77.0280, 38.8983,
-  "Gallery Place-Chinatown", -77.0219, 38.8983,
-  "Judiciary Square", -77.0166, 38.8962,
-  "Union Station", -77.0074, 38.8976,
-  "NoMa-Gallaudet U", -77.0029, 38.9071,
-  "Rhode Island Ave", -76.9958, 38.9210,
-  "Brookland-CUA", -76.9946, 38.9332,
-  "Fort Totten", -77.0020, 38.9519,
-  "Takoma", -77.0180, 38.9760,
-  "Silver Spring", -77.0310, 38.9940,
-  "Forest Glen", -77.0430, 39.0150,
-  "Wheaton", -77.0510, 39.0380,
-  "Glenmont", -77.0535, 39.0620,
-  "Farragut North", -77.0397, 38.9032,
-  "Dupont Circle", -77.0434, 38.9096,
-  "Woodley Park", -77.0524, 38.9249,
-  "Cleveland Park", -77.0585, 38.9349,
-  "Van Ness-UDC", -77.0633, 38.9434,
-  "Tenleytown-AU", -77.0795, 38.9479,
-  "Friendship Heights", -77.0851, 38.9597,
-  "Bethesda", -77.0940, 38.9845,
-  "Medical Center", -77.0970, 38.9990,
-  "Grosvenor-Strathmore", -77.1040, 39.0290,
-  "White Flint", -77.1130, 39.0480,
-  "Twinbrook", -77.1210, 39.0620,
-  "Rockville", -77.1460, 39.0840,
-  "Shady Grove", -77.1650, 39.1200,
-  # Orange/Silver/Blue Lines
-  "Farragut West", -77.0406, 38.9014,
-  "McPherson Square", -77.0337, 38.9013,
-  "Federal Triangle", -77.0284, 38.8932,
-  "Smithsonian", -77.0280, 38.8880,
-  "L'Enfant Plaza", -77.0219, 38.8849,
-  "Federal Center SW", -77.0159, 38.8851,
-  "Capitol South", -77.0050, 38.8850,
-  "Eastern Market", -76.9960, 38.8845,
-  "Potomac Ave", -76.9856, 38.8809,
-  "Stadium-Armory", -76.9770, 38.8867,
-  "Minnesota Ave", -76.9483, 38.8989,
-  "Deanwood", -76.9353, 38.9082,
-  "Cheverly", -76.9160, 38.9170,
-  "Landover", -76.8910, 38.9340,
-  "New Carrollton", -76.8720, 38.9480,
-  "Benning Road", -76.9383, 38.8908,
-  "Capitol Heights", -76.9130, 38.8895,
-  "Addison Road", -76.8940, 38.8870,
-  "Morgan Boulevard", -76.8680, 38.8910,
-  "Largo Town Center", -76.8420, 38.9010,
-  "Foggy Bottom-GWU", -77.0505, 38.9007,
-  "Rosslyn", -77.0710, 38.8960,
-  "Court House", -77.0860, 38.8910,
-  "Clarendon", -77.0960, 38.8870,
-  "Virginia Square", -77.1030, 38.8830,
-  "Ballston", -77.1120, 38.8820,
-  "East Falls Church", -77.1570, 38.8860,
-  "West Falls Church", -77.1890, 38.9010,
-  "Dunn Loring", -77.2280, 38.8830,
-  "Vienna", -77.2710, 38.8780,
-  "McLean", -77.2100, 38.9240,
-  "Tysons", -77.2230, 38.9200,
-  "Greensboro", -77.2350, 38.9210,
-  "Spring Hill", -77.2410, 38.9290,
-  "Wiehle-Reston East", -77.2830, 38.9470,
-  "Reston Town Center", -77.3390, 38.9530,
-  "Herndon", -77.3860, 38.9530,
-  "Innovation Center", -77.4190, 38.9600,
-  "Dulles Airport", -77.4510, 38.9560,
-  "Loudoun Gateway", -77.4670, 38.9980,
-  "Ashburn", -77.4920, 39.0060,
-  "Arlington Cemetery", -77.0630, 38.8850,
-  "Pentagon", -77.0537, 38.8690,
-  "Pentagon City", -77.0590, 38.8630,
-  "Crystal City", -77.0510, 38.8570,
-  "Ronald Reagan Airport", -77.0440, 38.8530,
-  "Braddock Road", -77.0540, 38.8140,
-  "King St-Old Town", -77.0610, 38.8070,
-  "Eisenhower Ave", -77.0710, 38.8000,
-  "Huntington", -77.0750, 38.7940,
-  "Van Dorn Street", -77.1290, 38.7990,
-  "Franconia-Springfield", -77.1680, 38.7660,
-  # Green/Yellow Lines
-  "Archives-Navy Memorial", -77.0219, 38.8938,
-  "Shaw-Howard U", -77.0219, 38.9129,
-  "U Street", -77.0280, 38.9170,
-  "Columbia Heights", -77.0325, 38.9285,
-  "Georgia Ave-Petworth", -77.0236, 38.9368,
-  "West Hyattsville", -76.9690, 38.9550,
-  "Prince George's Plaza", -76.9560, 38.9650,
-  "College Park", -76.9280, 38.9790,
-  "Greenbelt", -76.9110, 39.0110,
-  "Waterfront", -77.0170, 38.8764,
-  "Navy Yard-Ballpark", -77.0050, 38.8764,
-  "Anacostia", -76.9953, 38.8629,
-  "Congress Heights", -76.9883, 38.8457,
-  "Southern Ave", -76.9750, 38.8409,
-  "Naylor Road", -76.9562, 38.8512,
-  "Suitland", -76.9320, 38.8439,
-  "Branch Ave", -76.9124, 38.8265
-)
-
-metro_sf <- st_as_sf(metro_stations, coords = c("lon", "lat"), crs = 4326)
+# Read DC libraries from GeoJSON
+# Source: DC Open Data Portal
+dc_libraries <- st_read("Libraries.geojson", quiet = TRUE)
 
 tm_shape(st_transform(dc_boundary, 4326)) +
   tm_polygons(fill = "#e8f1f8", col = "#4a90d9", lwd = 2) +
-tm_shape(metro_sf) +
+tm_shape(dc_libraries) +
   tm_dots(size = 0.5, col = "#c41e3a") +
-tm_title("Point location of metro stations in/around DC") +
+tm_title("Point locations of DC public libraries") +
 tm_layout(frame = FALSE)
 ```
 :::
@@ -357,6 +255,12 @@ ggplot() +
   - Identify an example for when the method would be **suitable** and **unsuitable**
   - Nominate a group representative to share out your results
 
+## Access the Slides
+
+![](qr_code.jpg){width=400 fig-align="center"}
+
+<https://bit.ly/albans_access>
+
 ## Method 1: The Container Method
 
 **Steps:**
@@ -384,11 +288,9 @@ ggplot() +
    - Divide 1 by the square of each distance
    - Sum those values
 
-. . .
-
-**Formula:**
-
-$$access_i = \sum_{j}{\frac{1}{distance_{ij}^2}}$$
+::: {.fragment}
+**Formula:** $access_i = \sum_{j}{\frac{1}{distance_{ij}^2}}$
+:::
 
 ## Discussion Questions
 
