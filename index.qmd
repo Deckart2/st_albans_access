@@ -33,16 +33,14 @@ options(tigris_use_cache = TRUE)
 - Graduated from Brophy College Preparatory in Phoenix, AZ
 - Studied a mix of Geography, Public Policy, and Computer Science
 - Data scientist at the Urban Institute:
-  - Build tools to support communities' support fair resource allocation and upward mobility from poverty
+  - Build tools to support communities' fair resource allocation
 
 ## Run of Show
 
-- Motivation: Why is spatial access important
-- Present on some spatial and demographic data analysis concepts
-- Break you all in three groups to have you all consider a spatial access measure
-- We will share out to the group
-- Real life example
-- I will present a bit on how we think about these things in practice for a piece of software I have co-built and work on at Urban
+1. Motivation: Why spatial access is important
+2. Spatial data concepts
+3. Activity
+4. Examples in practice
 
 ## Motivation
 
@@ -64,10 +62,7 @@ options(tigris_use_cache = TRUE)
   - Libraries
 :::
 
-::: {.column width="65%"}
-
-. . .
-
+::: {.column width="65%" .fragment}
 ```{r point-data-example}
 #| fig-width: 8
 #| fig-height: 7
@@ -104,10 +99,7 @@ tm_layout(frame = FALSE)
   - School districts
 :::
 
-::: {.column width="65%"}
-
-. . .
-
+::: {.column width="65%" .fragment}
 ```{r polygon-data-example}
 #| fig-width: 8
 #| fig-height: 7
@@ -140,32 +132,7 @@ tm_layout(frame = FALSE)
 - Rural areas: they are much larger (to encompass enough population)
 - Boundaries generally follow visible features (roads, rivers) and governmental boundaries
 
-## Census Tracts: Urban vs. Rural
-
-```{r census-tract-comparison}
-#| fig-width: 12
-#| fig-height: 6
-
-# Compare DC tracts (urban) with Wyoming (rural)
-dc_tracts_ex <- tracts(state = "DC", year = 2022)
-wyoming_tracts <- tracts(state = "WY", year = 2022)
-
-m1 <- tm_shape(dc_tracts_ex) +
-  tm_polygons(fill = "#e8f1f8", col = "#4a90d9", lwd = 1) +
-  tm_scalebar(position = c("right", "bottom")) +
-  tm_title(paste0("Urban: Washington, DC\n", nrow(dc_tracts_ex), " census tracts (~68 sq mi)")) +
-  tm_layout(frame = FALSE)
-
-m2 <- tm_shape(wyoming_tracts) +
-  tm_polygons(fill = "#e8f1f8", col = "#4a90d9", lwd = 1) +
-  tm_scalebar(position = c("right", "bottom")) +
-  tm_title(paste0("Rural: Wyoming\n", nrow(wyoming_tracts), " census tracts (~97,813 sq mi)")) +
-  tm_layout(frame = FALSE)
-
-tmap_arrange(m1, m2, ncol = 2)
-```
-
-## St. Alban's Census Tract
+## St. Albans Census Tract
 
 ```{r st-albans-map}
 #| fig-width: 10
@@ -453,3 +420,30 @@ Visit: [https://apps.urban.org/features/equity-data-tool/](https://apps.urban.or
 1. **Questions?** Ask me anything!
 
 2. **Takeaway:** When you travel from your home to some other place, think about the right way to measure how easy it is to get there
+
+# Appendix
+
+## Census Tracts: Urban vs. Rural
+
+```{r census-tract-comparison}
+#| fig-width: 12
+#| fig-height: 6
+
+# Compare DC tracts (urban) with Wyoming (rural)
+dc_tracts_ex <- tracts(state = "DC", year = 2022)
+wyoming_tracts <- tracts(state = "WY", year = 2022)
+
+m1 <- tm_shape(dc_tracts_ex) +
+  tm_polygons(fill = "#e8f1f8", col = "#4a90d9", lwd = 1) +
+  tm_scalebar(position = c("right", "bottom")) +
+  tm_title(paste0("Urban: Washington, DC\n", nrow(dc_tracts_ex), " census tracts (~68 sq mi)")) +
+  tm_layout(frame = FALSE)
+
+m2 <- tm_shape(wyoming_tracts) +
+  tm_polygons(fill = "#e8f1f8", col = "#4a90d9", lwd = 1) +
+  tm_scalebar(position = c("right", "bottom")) +
+  tm_title(paste0("Rural: Wyoming\n", nrow(wyoming_tracts), " census tracts (~97,813 sq mi)")) +
+  tm_layout(frame = FALSE)
+
+tmap_arrange(m1, m2, ncol = 2)
+```
