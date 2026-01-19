@@ -1,0 +1,551 @@
+---
+title: "Measuring Spatial Access to Resources at Scale"
+subtitle: "St. Albans MLK Day of Reflection<br>January 20, 2025"
+author:
+  - name: "Gabe Morrison"
+    affiliation: "Senior Data Scientist<br>The Urban Institute"
+format:
+  revealjs:
+    theme: custom-theme.scss
+    slide-number: true
+    preview-links: auto
+    embed-resources: true
+    incremental: true
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+```{r setup}
+#| include: false
+library(tidyverse)
+library(sf)
+library(tigris)
+library(tmap)
+library(leaflet)
+library(tidycensus)
+options(tigris_use_cache = TRUE)
+```
+
+## Who am I
+
+- Graduated from Brophy College Preparatory in Phoenix, AZ
+- Studied a mix of Geography, Public Policy, and Computer Science
+- Data scientist at the Urban Institute:
+  - Build tools to support communities' support fair resource allocation and upward mobility from poverty
+
+## Run of Show
+
+- Motivation: Why is spatial access important
+- Present on some spatial and demographic data analysis concepts
+- Break you all in three groups to have you all consider a spatial access measure
+- We will share out to the group
+- Real life example
+- I will present a bit on how we think about these things in practice for a piece of software I have co-built and work on at Urban
+
+## Motivation
+
+- **Government resource allocation:** Identify disparities or suitable opportunities for investment
+- **Business (location intelligence):** Determine underserved markets
+- **Assess property values:** Proximity to amenities affects real estate pricing
+
+## Key Concepts: Point and Polygon Data
+
+## Point Data
+
+:::: {.columns}
+
+::: {.column width="35%"}
+- Used to represent a **single location**
+- Examples:
+  - Location of post offices
+  - Metro stations
+  - Libraries
+:::
+
+::: {.column width="65%"}
+
+. . .
+
+```{r point-data-example}
+#| fig-width: 8
+#| fig-height: 7
+
+tmap_mode("plot")
+
+# Get DC boundary for context
+dc_boundary <- counties(state = "DC", year = 2022)
+
+# All DC Metro stations (DC, VA, and MD)
+metro_stations <- tribble(
+  ~name, ~lon, ~lat,
+  # Red Line
+  "Metro Center", -77.0280, 38.8983,
+  "Gallery Place-Chinatown", -77.0219, 38.8983,
+  "Judiciary Square", -77.0166, 38.8962,
+  "Union Station", -77.0074, 38.8976,
+  "NoMa-Gallaudet U", -77.0029, 38.9071,
+  "Rhode Island Ave", -76.9958, 38.9210,
+  "Brookland-CUA", -76.9946, 38.9332,
+  "Fort Totten", -77.0020, 38.9519,
+  "Takoma", -77.0180, 38.9760,
+  "Silver Spring", -77.0310, 38.9940,
+  "Forest Glen", -77.0430, 39.0150,
+  "Wheaton", -77.0510, 39.0380,
+  "Glenmont", -77.0535, 39.0620,
+  "Farragut North", -77.0397, 38.9032,
+  "Dupont Circle", -77.0434, 38.9096,
+  "Woodley Park", -77.0524, 38.9249,
+  "Cleveland Park", -77.0585, 38.9349,
+  "Van Ness-UDC", -77.0633, 38.9434,
+  "Tenleytown-AU", -77.0795, 38.9479,
+  "Friendship Heights", -77.0851, 38.9597,
+  "Bethesda", -77.0940, 38.9845,
+  "Medical Center", -77.0970, 38.9990,
+  "Grosvenor-Strathmore", -77.1040, 39.0290,
+  "White Flint", -77.1130, 39.0480,
+  "Twinbrook", -77.1210, 39.0620,
+  "Rockville", -77.1460, 39.0840,
+  "Shady Grove", -77.1650, 39.1200,
+  # Orange/Silver/Blue Lines
+  "Farragut West", -77.0406, 38.9014,
+  "McPherson Square", -77.0337, 38.9013,
+  "Federal Triangle", -77.0284, 38.8932,
+  "Smithsonian", -77.0280, 38.8880,
+  "L'Enfant Plaza", -77.0219, 38.8849,
+  "Federal Center SW", -77.0159, 38.8851,
+  "Capitol South", -77.0050, 38.8850,
+  "Eastern Market", -76.9960, 38.8845,
+  "Potomac Ave", -76.9856, 38.8809,
+  "Stadium-Armory", -76.9770, 38.8867,
+  "Minnesota Ave", -76.9483, 38.8989,
+  "Deanwood", -76.9353, 38.9082,
+  "Cheverly", -76.9160, 38.9170,
+  "Landover", -76.8910, 38.9340,
+  "New Carrollton", -76.8720, 38.9480,
+  "Benning Road", -76.9383, 38.8908,
+  "Capitol Heights", -76.9130, 38.8895,
+  "Addison Road", -76.8940, 38.8870,
+  "Morgan Boulevard", -76.8680, 38.8910,
+  "Largo Town Center", -76.8420, 38.9010,
+  "Foggy Bottom-GWU", -77.0505, 38.9007,
+  "Rosslyn", -77.0710, 38.8960,
+  "Court House", -77.0860, 38.8910,
+  "Clarendon", -77.0960, 38.8870,
+  "Virginia Square", -77.1030, 38.8830,
+  "Ballston", -77.1120, 38.8820,
+  "East Falls Church", -77.1570, 38.8860,
+  "West Falls Church", -77.1890, 38.9010,
+  "Dunn Loring", -77.2280, 38.8830,
+  "Vienna", -77.2710, 38.8780,
+  "McLean", -77.2100, 38.9240,
+  "Tysons", -77.2230, 38.9200,
+  "Greensboro", -77.2350, 38.9210,
+  "Spring Hill", -77.2410, 38.9290,
+  "Wiehle-Reston East", -77.2830, 38.9470,
+  "Reston Town Center", -77.3390, 38.9530,
+  "Herndon", -77.3860, 38.9530,
+  "Innovation Center", -77.4190, 38.9600,
+  "Dulles Airport", -77.4510, 38.9560,
+  "Loudoun Gateway", -77.4670, 38.9980,
+  "Ashburn", -77.4920, 39.0060,
+  "Arlington Cemetery", -77.0630, 38.8850,
+  "Pentagon", -77.0537, 38.8690,
+  "Pentagon City", -77.0590, 38.8630,
+  "Crystal City", -77.0510, 38.8570,
+  "Ronald Reagan Airport", -77.0440, 38.8530,
+  "Braddock Road", -77.0540, 38.8140,
+  "King St-Old Town", -77.0610, 38.8070,
+  "Eisenhower Ave", -77.0710, 38.8000,
+  "Huntington", -77.0750, 38.7940,
+  "Van Dorn Street", -77.1290, 38.7990,
+  "Franconia-Springfield", -77.1680, 38.7660,
+  # Green/Yellow Lines
+  "Archives-Navy Memorial", -77.0219, 38.8938,
+  "Shaw-Howard U", -77.0219, 38.9129,
+  "U Street", -77.0280, 38.9170,
+  "Columbia Heights", -77.0325, 38.9285,
+  "Georgia Ave-Petworth", -77.0236, 38.9368,
+  "West Hyattsville", -76.9690, 38.9550,
+  "Prince George's Plaza", -76.9560, 38.9650,
+  "College Park", -76.9280, 38.9790,
+  "Greenbelt", -76.9110, 39.0110,
+  "Waterfront", -77.0170, 38.8764,
+  "Navy Yard-Ballpark", -77.0050, 38.8764,
+  "Anacostia", -76.9953, 38.8629,
+  "Congress Heights", -76.9883, 38.8457,
+  "Southern Ave", -76.9750, 38.8409,
+  "Naylor Road", -76.9562, 38.8512,
+  "Suitland", -76.9320, 38.8439,
+  "Branch Ave", -76.9124, 38.8265
+)
+
+metro_sf <- st_as_sf(metro_stations, coords = c("lon", "lat"), crs = 4326)
+
+tm_shape(st_transform(dc_boundary, 4326)) +
+  tm_polygons(fill = "#e8f1f8", col = "#4a90d9", lwd = 2) +
+tm_shape(metro_sf) +
+  tm_dots(size = 0.5, col = "#c41e3a") +
+tm_title("Point location of metro stations in/around DC") +
+tm_layout(frame = FALSE)
+```
+:::
+
+::::
+
+## Polygon Data
+
+:::: {.columns}
+
+::: {.column width="35%"}
+- Used to represent a **shape or area**
+- Examples:
+  - State borders
+  - Census tracts
+  - School districts
+:::
+
+::: {.column width="65%"}
+
+. . .
+
+```{r polygon-data-example}
+#| fig-width: 8
+#| fig-height: 7
+
+# Get Mid-Atlantic states as polygon example
+mid_atlantic <- states(year = 2022) |>
+  filter(STUSPS %in% c("DC", "MD", "VA", "WV", "PA", "DE", "NJ"))
+
+tm_shape(mid_atlantic) +
+  tm_polygons(
+    fill = "NAME",
+    fill.scale = tm_scale_categorical(
+      values = c("#4a90d9", "#8bbde8", "#b5d8f2", "#d4e8f8", "#a8cef0", "#c5dff5", "#7ab3e8")
+    ),
+    fill.legend = tm_legend_hide(),
+    col = "#1a1a1a",
+    lwd = 3
+  ) +
+tm_layout(frame = FALSE)
+```
+:::
+
+::::
+
+## Census Tracts
+
+**Definition:** Census tracts are small, relatively permanent statistical subdivisions of a county defined by the U.S. Census Bureau. They typically contain between 1,200 and 8,000 people, with an optimal size of 4,000 people.
+
+- Often closely aligned with a concept of a "neighborhood" in cities
+- Rural areas: they are much larger (to encompass enough population)
+- Boundaries generally follow visible features (roads, rivers) and governmental boundaries
+
+## Census Tracts: Urban vs. Rural
+
+```{r census-tract-comparison}
+#| fig-width: 12
+#| fig-height: 6
+
+# Compare DC tracts (urban) with Wyoming (rural)
+dc_tracts_ex <- tracts(state = "DC", year = 2022)
+wyoming_tracts <- tracts(state = "WY", year = 2022)
+
+m1 <- tm_shape(dc_tracts_ex) +
+  tm_polygons(fill = "#e8f1f8", col = "#4a90d9", lwd = 1) +
+  tm_scalebar(position = c("right", "bottom")) +
+  tm_title(paste0("Urban: Washington, DC\n", nrow(dc_tracts_ex), " census tracts (~68 sq mi)")) +
+  tm_layout(frame = FALSE)
+
+m2 <- tm_shape(wyoming_tracts) +
+  tm_polygons(fill = "#e8f1f8", col = "#4a90d9", lwd = 1) +
+  tm_scalebar(position = c("right", "bottom")) +
+  tm_title(paste0("Rural: Wyoming\n", nrow(wyoming_tracts), " census tracts (~97,813 sq mi)")) +
+  tm_layout(frame = FALSE)
+
+tmap_arrange(m1, m2, ncol = 2)
+```
+
+## St. Alban's Census Tract
+
+```{r st-albans-map}
+#| fig-width: 10
+#| fig-height: 7
+
+# Get DC census tracts
+dc_tracts <- tracts(state = "DC", year = 2022)
+
+# St. Alban's School coordinates (approximate)
+st_albans_point <- st_sfc(st_point(c(-77.0705, 38.9305)), crs = 4326)
+
+# Transform point to match tracts CRS
+st_albans_point_transformed <- st_transform(st_albans_point, st_crs(dc_tracts))
+
+# Find which tract contains St. Alban's
+st_albans_tract <- dc_tracts[st_intersects(dc_tracts, st_albans_point_transformed, sparse = FALSE), ]
+
+# Create interactive map with leaflet
+leaflet() |>
+  addProviderTiles(providers$CartoDB.Positron) |>
+  addPolygons(
+    data = st_transform(dc_tracts, 4326),
+    fillColor = "#4a90d9",
+    fillOpacity = 0.2,
+    color = "#4a90d9",
+    weight = 1,
+    label = ~TRACTCE
+  ) |>
+  addPolygons(
+    data = st_transform(st_albans_tract, 4326),
+    fillColor = "#4a90d9",
+    fillOpacity = 0.6,
+    color = "#1a1a1a",
+    weight = 3,
+    label = "St. Alban's Census Tract"
+  ) |>
+  addCircleMarkers(
+    lng = -77.0705,
+    lat = 38.9305,
+    radius = 8,
+    color = "#1a1a1a",
+    fillColor = "#c41e3a",
+    fillOpacity = 1,
+    weight = 2,
+    label = "St. Alban's School"
+  ) |>
+  setView(lng = -77.0705, lat = 38.9305, zoom = 13)
+```
+
+## Centroids
+
+- **Informally:** The center of a polygon
+- **More formally:** The geometric center or "average location" of all points in a polygon
+
+```{r centroid-diagram}
+#| fig-width: 11
+#| fig-height: 5
+
+# Create example polygons to demonstrate centroids
+poly1 <- st_polygon(list(rbind(
+  c(0, 0), c(2, 0), c(3, 1.5), c(2, 3), c(0, 2.5), c(0, 0)
+)))
+
+poly2 <- st_polygon(list(rbind(
+  c(4, 0), c(7, 0), c(7, 3), c(4, 3), c(4, 0)
+)))
+
+shapes <- st_sfc(poly1, poly2)
+shapes_sf <- st_sf(name = c("Irregular Polygon", "Rectangle"), geometry = shapes)
+centroids <- st_centroid(shapes_sf)
+
+ggplot() +
+  geom_sf(data = shapes_sf, fill = "#e8f1f8", color = "#4a90d9", linewidth = 1.2) +
+  geom_sf(data = centroids, color = "#c41e3a", size = 6) +
+  geom_sf_text(data = centroids, aes(label = "Centroid"),
+               vjust = -1.5, color = "#c41e3a", fontface = "bold", size = 4) +
+  theme_void()
+```
+
+## Spatial Access Methods: Group Activity
+
+- Break into **three groups**
+- Each group reviews one method on the following slides
+- Your tasks:
+  - Review and understand the approach
+  - Determine the **strengths and limitations** of the approach
+  - Identify an example for when the method would be **suitable** and **unsuitable**
+  - Nominate a group representative to share out your results
+
+## Method 1: The Container Method
+
+**Steps:**
+
+1. Count the number of points (resources) in a given census tract
+2. Treat all points in the polygon as accessible to residents of the census tract
+3. Treat all points outside the census tract as inaccessible
+4. Optionally, divide number of points by the population of the tract to get a "resource per person" measure
+
+## Method 2: Minimum Distance
+
+**Steps:**
+
+1. For each tract, start with a tract centroid
+2. Calculate the minimum distance from the centroid to a given resource
+3. The closer the nearest resource, the higher the access
+
+## Method 3: Gravity Potential
+
+**Steps:**
+
+1. Start with the tract centroid
+2. For the tract centroid:
+   - Calculate the distance to **each** resource
+   - Divide 1 by the square of each distance
+   - Sum those values
+
+. . .
+
+**Formula:**
+
+$$access_i = \sum_{j}{\frac{1}{distance_{ij}^2}}$$
+
+## Discussion Questions
+
+For your assigned method, discuss:
+
+- What are the **strengths**?
+- What are the **limitations**?
+- Provide a **use case** that demonstrates the strength
+- Provide a **use case** where the measure is inappropriate
+
+## Example: DC Libraries
+
+```{r dc-libraries-setup}
+#| include: false
+
+# Get DC census tracts with population data
+dc_tracts <- tracts(state = "DC", year = 2022)
+
+# DC Public Library locations (main branches)
+# Source: DC Open Data Portal
+libraries <- tribble(
+  ~name, ~lon, ~lat,
+  "Martin Luther King Jr. Memorial Library", -77.0191, 38.9012,
+  "Georgetown Library", -77.0726, 38.9094,
+  "Cleveland Park Library", -77.0585, 38.9365,
+  "Tenley-Friendship Library", -77.0893, 38.9477,
+  "Chevy Chase Library", -77.0689, 38.9621,
+  "Petworth Library", -77.0241, 38.9422,
+  "Takoma Park Library", -77.0125, 38.9796,
+  "Woodridge Library", -76.9810, 38.9264,
+  "Northeast Library", -76.9881, 38.9023,
+  "Capitol View Library", -76.9878, 38.8325,
+  "Anacostia Library", -76.9834, 38.8630,
+  "Southeast Library", -76.9832, 38.8789,
+  "Southwest Library", -77.0170, 38.8698,
+  "Palisades Library", -77.1076, 38.9230,
+  "West End Library", -77.0487, 38.9047,
+  "Mt. Pleasant Library", -77.0378, 38.9289,
+  "Shaw Library", -77.0219, 38.9127,
+  "Watha T. Daniel/Shaw Library", -77.0219, 38.9170,
+  "Benning Library", -76.9480, 38.8901,
+  "Francis A. Gregory Library", -76.9310, 38.8530,
+  "Deanwood Library", -76.9329, 38.9044
+)
+
+# Convert to sf object
+libraries_sf <- st_as_sf(libraries, coords = c("lon", "lat"), crs = 4326)
+
+# Transform to match tracts
+libraries_proj <- st_transform(libraries_sf, st_crs(dc_tracts))
+dc_tracts_proj <- dc_tracts
+
+# Calculate all metrics
+# Container method
+dc_tracts_proj$lib_count <- lengths(st_intersects(dc_tracts_proj, libraries_proj))
+
+# Minimum distance
+tract_centroids <- st_centroid(dc_tracts_proj)
+min_distances <- st_distance(tract_centroids, libraries_proj)
+dc_tracts_proj$min_dist <- apply(min_distances, 1, min)
+dc_tracts_proj$min_dist_miles <- as.numeric(dc_tracts_proj$min_dist) / 1609.34
+
+# Gravity potential
+distances <- st_distance(tract_centroids, libraries_proj)
+distances_km <- as.numeric(distances) / 1000
+dist_matrix <- matrix(distances_km, nrow = nrow(tract_centroids))
+dc_tracts_proj$gravity <- apply(dist_matrix, 1, function(d) sum(1 / (d + 0.1)^2))
+```
+
+::: {.panel-tabset}
+
+### Data
+
+```{r show-base-map}
+#| fig-width: 10
+#| fig-height: 6
+
+tm_shape(dc_tracts_proj) +
+  tm_polygons(fill = "#e8f1f8", col = "#4a90d9", lwd = 0.5) +
+tm_shape(libraries_proj) +
+  tm_dots(size = 0.5, col = "#c41e3a") +
+tm_layout(frame = FALSE)
+```
+
+### Container
+
+```{r container-method}
+#| fig-width: 10
+#| fig-height: 6
+
+tm_shape(dc_tracts_proj) +
+  tm_polygons(
+    fill = "lib_count",
+    fill.scale = tm_scale_continuous(values = "plasma"),
+    fill.legend = tm_legend(title = "Count"),
+    col = "white",
+    lwd = 0.3
+  ) +
+tm_shape(libraries_proj) +
+  tm_dots(size = 0.3, col = "#c41e3a") +
+tm_layout(frame = FALSE)
+```
+
+### Min Distance
+
+```{r min-distance-method}
+#| fig-width: 10
+#| fig-height: 6
+
+tm_shape(dc_tracts_proj) +
+  tm_polygons(
+    fill = "min_dist_miles",
+    fill.scale = tm_scale_continuous(values = "-plasma"),
+    fill.legend = tm_legend(title = "Miles"),
+    col = "white",
+    lwd = 0.3
+  ) +
+tm_shape(libraries_proj) +
+  tm_dots(size = 0.3, col = "#c41e3a") +
+tm_layout(frame = FALSE)
+```
+
+### Gravity
+
+```{r gravity-method}
+#| fig-width: 10
+#| fig-height: 6
+
+tm_shape(dc_tracts_proj) +
+  tm_polygons(
+    fill = "gravity",
+    fill.scale = tm_scale_continuous(values = "plasma"),
+    fill.legend = tm_legend(title = "Score"),
+    col = "white",
+    lwd = 0.3
+  ) +
+tm_shape(libraries_proj) +
+  tm_dots(size = 0.3, col = "#c41e3a") +
+tm_layout(frame = FALSE)
+```
+
+:::
+
+## Spatial Equity Data Tool
+
+- Free software that lives on Urban's website
+- Built to respond to local government desires to advance racial equity and align with "smart cities" goals
+- Cities want analytics but may not have support to calculate it
+- Or they have different definitions of access/equity
+- Uses the container method
+
+## Demo
+
+**Live demonstration of the Spatial Equity Data Tool**
+
+Visit: [https://apps.urban.org/features/equity-data-tool/](https://apps.urban.org/features/equity-data-tool/)
+
+## Thank You
+
+Questions?
